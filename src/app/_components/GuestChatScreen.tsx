@@ -1,16 +1,18 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import React, { useState } from "react";
+import LoginDialog from "./LoginDialog";
 
 type Message = {
   id: string;
   authorId: string;
   content: string;
 };
-const ChatScreen = () => {
+const GuestChatScreen = () => {
   const [chatInput, setChatInput] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -23,13 +25,23 @@ const ChatScreen = () => {
       content: "Why",
     },
   ]);
-  const { user } = useUser();
+
+  const { isSignedIn } = useUser();
+  const handleSendMessage = () => {
+    // setIsDialogOpen(true);
+    if (!isSignedIn) {
+      setIsDialogOpen(true);
+    }
+  };
 
   return (
     <div className="p-3 py-6 container mx-auto h-screen flex flex-col space-y-4">
-      <nav className="flex items-end">
-        <UserButton />
-        <h3 className="mx-auto">{user?.fullName} </h3>
+      <nav className="flex">
+        <h2>Guest</h2>
+        <LoginDialog
+          isDialogOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+        />
       </nav>
 
       <section className="flex-1 space-y-3">
@@ -52,8 +64,14 @@ const ChatScreen = () => {
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           className="p-2 w-full"
+          onKeyUp={(e) => {
+            if (e.key === "Enter") handleSendMessage();
+          }}
         />
-        <Button className="absolute right-0 top-1/2 -translate-y-1/2">
+        <Button
+          onClick={handleSendMessage}
+          className="absolute right-0 top-1/2 -translate-y-1/2"
+        >
           Send
         </Button>
       </footer>
@@ -61,4 +79,4 @@ const ChatScreen = () => {
   );
 };
 
-export default ChatScreen;
+export default GuestChatScreen;
