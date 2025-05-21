@@ -2,43 +2,37 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { UserButton, useUser } from "@clerk/nextjs";
-import React, { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import React, { useEffect, useState } from "react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 
-type Message = {
-  id: string;
-  authorId: string;
-  content: string;
-};
 const ChatScreen = () => {
   const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      authorId: "user1",
-      content: "nani",
-    },
-    {
-      id: "2",
-      authorId: "user2",
-      content: "Why",
-    },
-  ]);
+  const messages = useQuery(api.messages.getMessages);
+  const sendMessage = useMutation(api.messages.sendMessage);
   const { user } = useUser();
+
+  const handleSendMessage = () => {
+    sendMessage({
+      content: chatInput,
+    });
+    setChatInput("");
+  };
 
   return (
     <div className="p-3 py-6 container mx-auto h-screen flex flex-col space-y-4">
       <nav className="flex items-end">
         <UserButton />
-        <h3 className="mx-auto">{user?.fullName} </h3>
       </nav>
 
       <section className="flex-1 space-y-3">
-        {messages.map((msg) => (
+        {messages?.map((msg) => (
           <p
-            key={msg.id}
+            key={msg._id}
             className={cn(
               " p-2 rounded-full w-fit",
-              msg.authorId === "user1" ? "bg-slate-200" : "bg-pink-200 ml-auto"
+              msg.senderId === user?.id ? "bg-pink-200 ml-auto" : "bg-slate-200"
             )}
           >
             {msg.content}{" "}
@@ -52,8 +46,14 @@ const ChatScreen = () => {
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           className="p-2 w-full"
+          onKeyUp={(e) => {
+            if (e.key === "Enter") handleSendMessage();
+          }}
         />
-        <Button className="absolute right-0 top-1/2 -translate-y-1/2">
+        <Button
+          onClick={handleSendMessage}
+          className="absolute right-0 top-1/2 -translate-y-1/2"
+        >
           Send
         </Button>
       </footer>
